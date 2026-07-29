@@ -6,9 +6,10 @@ use App\Http\Controllers\Player\PlayerController;
 use App\Http\Controllers\Fixture\FixtureController;
 use App\Http\Controllers\PlayerStat\PlayerStatController;
 use App\Http\Controllers\LeagueTable\LeagueTableController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Leaderboard\LeaderboardController;
+use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Upload\UploadController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -42,4 +43,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/player-stats', [PlayerStatController::class, 'store']);
     Route::put('/player-stats/{playerStat}', [PlayerStatController::class, 'update']);
     Route::delete('/player-stats/{playerStat}', [PlayerStatController::class, 'destroy']);
+
+    Route::get('/dashboard-stats', [DashboardController::class, 'index']);
+
+    Route::post('/upload', [UploadController::class, 'store']);
 });
