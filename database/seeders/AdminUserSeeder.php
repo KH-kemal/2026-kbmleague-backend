@@ -11,9 +11,9 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'admin@kickrank.com'],
+            ['email' => 'admin@smartfootball.com'],
             [
-                'name' => 'Administrator KickRank',
+                'name' => 'Administrator SmartFootball',
                 'password' => Hash::make('password123'),
             ]
         );
