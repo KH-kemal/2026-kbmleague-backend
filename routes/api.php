@@ -12,6 +12,8 @@ use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Upload\UploadController;
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/google-auth', [AuthController::class, 'googleAuth']);
 
 Route::get('/teams', [TeamController::class, 'index']);
 Route::get('/teams/{team}', [TeamController::class, 'show']);
