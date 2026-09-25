@@ -51,6 +51,9 @@ class PlayerController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        // Auto generate unique qr_code token
+        $validated['qr_code'] = 'SF-PL-' . strtoupper(\Illuminate\Support\Str::random(10)) . '-' . time();
+
         $player = Player::create($validated);
 
         return response()->json($player->load('team'), 201);
@@ -74,6 +77,7 @@ class PlayerController extends Controller
             'weight' => 'nullable|integer',
             'overall_rating' => 'nullable|numeric|between:0,10',
             'is_active' => 'boolean',
+            'qr_code' => 'nullable|string|unique:players,qr_code,' . $player->id,
         ]);
 
         $player->update($validated);
@@ -86,5 +90,25 @@ class PlayerController extends Controller
         $player->delete();
 
         return response()->json(null, 204);
+    }
+
+    public function generateQr(Player $player): JsonResponse
+    {
+        $player->update([
+            'qr_code' => 'SF-PL-' . strtoupper(\Illuminate\Support\Str::random(10)) . '-' . time()
+        ]);
+
+        return response()->json($player->load('team'));
+    }
+
+    public function showByQr(string $qrCode): JsonResponse
+    {
+        $player = Player::where('qr_code', $qrCode)->with('team')->first();
+
+        if (!$player) {
+            return response()->json(['message' => 'Pemain tidak ditemukan.'], 404);
+        }
+
+        return response()->json($player);
     }
 }

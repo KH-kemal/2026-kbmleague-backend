@@ -1,46 +1,43 @@
-# KickRank Backend
+# SmartFootball Backend
 
-Backend API untuk project KickRank, dibangun dengan Laravel 12.
+Laravel 12 REST API untuk tim, pemain, fixture, statistik pertandingan, klasemen, leaderboard, dan dashboard. Database dimulai tanpa data contoh.
 
-## Fungsi Utama
-
-- Menyediakan API untuk tim, pemain, fixture, statistik pemain, klasemen, dan leaderboard.
-- Mengelola relasi Eloquent antara tim, pemain, pertandingan, dan statistik.
-- Menyediakan endpoint untuk dipakai frontend React.
-
-## Teknologi
-
-- Laravel 12
-- PHP 8.3+
-- Eloquent ORM
-- Laravel Sanctum
-- MySQL / MariaDB
-
-## Menjalankan Project
+## Menjalankan
 
 ```bash
 composer install
+cp .env.example .env
+php artisan key:generate
+```
+
+Atur `DB_*` di `.env`, lalu:
+
+```bash
 php artisan migrate
+php artisan storage:link
 php artisan serve
 ```
 
-## Endpoint Utama
+PHP 8.2+ dan MySQL/MariaDB diperlukan. API default berjalan di `http://127.0.0.1:8000/api`.
 
-- `GET /api/teams`
-- `GET /api/players`
-- `GET /api/fixtures`
-- `GET /api/player-stats`
-- `GET /api/league-table`
-- `GET /api/leaderboard`
+## Akses
 
-## Struktur Singkat
+`GET /api/teams`, `/players`, `/fixtures`, `/player-stats`, `/league-table`, `/leaderboard`, dan `/dashboard-stats` bersifat publik. `POST /api/register` membuat akun pengguna biasa; `POST /api/login` mengembalikan token Sanctum. `/api/me` dan `/api/logout` memerlukan token. Seluruh endpoint perubahan data, unggahan, dan QR screening memerlukan token admin.
 
-- `app/Http/Controllers/Team` untuk controller tim.
-- `app/Http/Controllers/Player` untuk controller pemain.
-- `app/Http/Controllers/Fixture` untuk controller pertandingan.
-- `app/Http/Controllers/PlayerStat` untuk statistik pemain.
-- `app/Http/Controllers/Leaderboard` untuk klasemen papan peringkat.
+Buat admin pertama dengan mendaftarkan akun biasa, lalu jalankan `php artisan tinker`:
 
-## Catatan
+```php
+App\Models\User::where('email', 'alamat-admin-anda@example.com')->update(['is_admin' => true]);
+```
 
-File seperti `vendor`, `.env`, dan cache Laravel tidak perlu di-push ke GitHub karena sudah diabaikan melalui `.gitignore`.
+Logout dan login ulang setelah menaikkan hak akses. Ganti kata sandi bawaan pada database lama sebelum dipakai di lingkungan terbuka.
+
+## Pemeriksaan
+
+```bash
+php artisan migrate:status
+php artisan route:list --path=api
+php artisan test
+```
+
+Seeder bawaan kosong. Jangan gunakan `migrate:fresh` pada database yang menyimpan data nyata karena perintah itu menghapus seluruh tabel.

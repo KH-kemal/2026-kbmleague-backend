@@ -4,6 +4,7 @@ namespace App\Http\Controllers\PlayerStat;
 
 use App\Http\Controllers\Controller;
 use App\Models\Player\Player;
+use App\Models\Fixture\Fixture;
 use App\Models\PlayerStat\PlayerStat;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -48,6 +49,12 @@ class PlayerStatController extends Controller
             'red_cards' => 'integer|min:0',
             'own_goals' => 'integer|min:0',
         ]);
+
+        $player = Player::findOrFail($validated['player_id']);
+        $fixture = Fixture::findOrFail($validated['fixture_id']);
+        if ((int) $player->team_id !== (int) $validated['team_id'] || !in_array((int) $validated['team_id'], [(int) $fixture->home_team_id, (int) $fixture->away_team_id], true)) {
+            return response()->json(['message' => 'Pemain dan tim harus sesuai dengan peserta pertandingan.'], 422);
+        }
 
         $validated['rating'] = $this->calculateRating($validated);
 

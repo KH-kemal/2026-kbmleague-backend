@@ -13,7 +13,6 @@ use App\Http\Controllers\Upload\UploadController;
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/google-auth', [AuthController::class, 'googleAuth']);
 
 Route::get('/teams', [TeamController::class, 'index']);
 Route::get('/teams/{team}', [TeamController::class, 'show']);
@@ -25,28 +24,31 @@ Route::get('/player-stats', [PlayerStatController::class, 'index']);
 Route::get('/player-stats/{playerStat}', [PlayerStatController::class, 'show']);
 Route::get('/league-table', [LeagueTableController::class, 'index']);
 Route::get('/leaderboard', [LeaderboardController::class, 'index']);
+Route::get('/dashboard-stats', [DashboardController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
-    Route::post('/teams', [TeamController::class, 'store']);
-    Route::put('/teams/{team}', [TeamController::class, 'update']);
-    Route::delete('/teams/{team}', [TeamController::class, 'destroy']);
+    Route::middleware('admin')->group(function () {
+        Route::post('/teams', [TeamController::class, 'store']);
+        Route::put('/teams/{team}', [TeamController::class, 'update']);
+        Route::delete('/teams/{team}', [TeamController::class, 'destroy']);
 
-    Route::post('/players', [PlayerController::class, 'store']);
-    Route::put('/players/{player}', [PlayerController::class, 'update']);
-    Route::delete('/players/{player}', [PlayerController::class, 'destroy']);
+        Route::post('/players', [PlayerController::class, 'store']);
+        Route::put('/players/{player}', [PlayerController::class, 'update']);
+        Route::delete('/players/{player}', [PlayerController::class, 'destroy']);
+        Route::post('/players/{player}/generate-qr', [PlayerController::class, 'generateQr']);
+        Route::get('/players/by-qr/{qr_code}', [PlayerController::class, 'showByQr']);
 
-    Route::post('/fixtures', [FixtureController::class, 'store']);
-    Route::put('/fixtures/{fixture}', [FixtureController::class, 'update']);
-    Route::delete('/fixtures/{fixture}', [FixtureController::class, 'destroy']);
+        Route::post('/fixtures', [FixtureController::class, 'store']);
+        Route::put('/fixtures/{fixture}', [FixtureController::class, 'update']);
+        Route::delete('/fixtures/{fixture}', [FixtureController::class, 'destroy']);
 
-    Route::post('/player-stats', [PlayerStatController::class, 'store']);
-    Route::put('/player-stats/{playerStat}', [PlayerStatController::class, 'update']);
-    Route::delete('/player-stats/{playerStat}', [PlayerStatController::class, 'destroy']);
+        Route::post('/player-stats', [PlayerStatController::class, 'store']);
+        Route::put('/player-stats/{playerStat}', [PlayerStatController::class, 'update']);
+        Route::delete('/player-stats/{playerStat}', [PlayerStatController::class, 'destroy']);
 
-    Route::get('/dashboard-stats', [DashboardController::class, 'index']);
-
-    Route::post('/upload', [UploadController::class, 'store']);
+        Route::post('/upload', [UploadController::class, 'store']);
+    });
 });

@@ -34,6 +34,8 @@ class FixtureController extends Controller
             'away_score' => 'nullable|integer|min:0',
         ]);
 
+        if ($response = $this->validateScore($validated)) return $response;
+
         $fixture = Fixture::create($validated);
 
         return response()->json($fixture->load(['homeTeam', 'awayTeam']), 201);
@@ -56,6 +58,8 @@ class FixtureController extends Controller
             'away_score' => 'nullable|integer|min:0',
         ]);
 
+        if ($response = $this->validateScore(array_merge($fixture->only(['status', 'home_score', 'away_score']), $validated))) return $response;
+
         $fixture->update($validated);
 
         return response()->json($fixture->load(['homeTeam', 'awayTeam']));
@@ -66,5 +70,13 @@ class FixtureController extends Controller
         $fixture->delete();
 
         return response()->json(null, 204);
+    }
+
+    private function validateScore(array $data): ?JsonResponse
+    {
+        if ($data['status'] === 'completed' && (($data['home_score'] ?? null) === null || ($data['away_score'] ?? null) === null)) {
+            return response()->json(['message' => 'Pertandingan selesai harus memiliki kedua skor.'], 422);
+        }
+        return null;
     }
 }
