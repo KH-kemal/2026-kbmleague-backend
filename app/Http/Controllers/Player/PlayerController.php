@@ -52,7 +52,7 @@ class PlayerController extends Controller
         ]);
 
         // Auto generate unique qr_code token
-        $validated['qr_code'] = 'SF-PL-' . strtoupper(\Illuminate\Support\Str::random(10)) . '-' . time();
+        $validated['qr_code'] = 'KBM-PL-' . strtoupper(\Illuminate\Support\Str::random(10)) . '-' . time();
 
         $player = Player::create($validated);
 
@@ -95,7 +95,7 @@ class PlayerController extends Controller
     public function generateQr(Player $player): JsonResponse
     {
         $player->update([
-            'qr_code' => 'SF-PL-' . strtoupper(\Illuminate\Support\Str::random(10)) . '-' . time()
+            'qr_code' => 'KBM-PL-' . strtoupper(\Illuminate\Support\Str::random(10)) . '-' . time()
         ]);
 
         return response()->json($player->load('team'));

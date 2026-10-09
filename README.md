@@ -1,4 +1,4 @@
-# SmartFootball Backend
+# KBMLeague Backend
 
 Laravel 12 REST API untuk tim, pemain, fixture, statistik pertandingan, klasemen, leaderboard, dan dashboard. Database dimulai tanpa data contoh.
 
