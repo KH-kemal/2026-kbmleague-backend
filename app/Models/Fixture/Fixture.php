@@ -10,6 +10,11 @@ class Fixture extends Model
 {
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'goals' => 'array',
+        'match_statistics' => 'array',
+    ];
+
     public function homeTeam(): BelongsTo
     {
         return $this->belongsTo(Team::class, 'home_team_id');

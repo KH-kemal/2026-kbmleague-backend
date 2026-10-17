@@ -3,11 +3,10 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Team\TeamController;
 use App\Http\Controllers\Player\PlayerController;
+use App\Http\Controllers\Player\PlayerImportController;
 use App\Http\Controllers\Fixture\FixtureController;
-use App\Http\Controllers\PlayerStat\PlayerStatController;
 use App\Http\Controllers\LeagueTable\LeagueTableController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Leaderboard\LeaderboardController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Upload\UploadController;
 
@@ -20,10 +19,7 @@ Route::get('/players', [PlayerController::class, 'index']);
 Route::get('/players/{player}', [PlayerController::class, 'show']);
 Route::get('/fixtures', [FixtureController::class, 'index']);
 Route::get('/fixtures/{fixture}', [FixtureController::class, 'show']);
-Route::get('/player-stats', [PlayerStatController::class, 'index']);
-Route::get('/player-stats/{playerStat}', [PlayerStatController::class, 'show']);
 Route::get('/league-table', [LeagueTableController::class, 'index']);
-Route::get('/leaderboard', [LeaderboardController::class, 'index']);
 Route::get('/dashboard-stats', [DashboardController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -45,10 +41,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/fixtures/{fixture}', [FixtureController::class, 'update']);
         Route::delete('/fixtures/{fixture}', [FixtureController::class, 'destroy']);
 
-        Route::post('/player-stats', [PlayerStatController::class, 'store']);
-        Route::put('/player-stats/{playerStat}', [PlayerStatController::class, 'update']);
-        Route::delete('/player-stats/{playerStat}', [PlayerStatController::class, 'destroy']);
 
         Route::post('/upload', [UploadController::class, 'store']);
     });
 });
+
+require __DIR__.'/player-import.php';

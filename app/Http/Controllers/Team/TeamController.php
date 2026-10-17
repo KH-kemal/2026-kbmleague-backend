@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Team;
 
 use App\Http\Controllers\Controller;
 use App\Models\Team\Team;
+use App\Http\Resources\PlayerResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -30,9 +31,12 @@ class TeamController extends Controller
         return response()->json($team, 201);
     }
 
-    public function show(Team $team): JsonResponse
+    public function show(Request $request, Team $team): JsonResponse
     {
-        return response()->json($team->load('players'));
+        $team->load('players');
+        $data = $team->toArray();
+        $data['players'] = PlayerResource::collection($team->players)->resolve($request);
+        return response()->json($data)->header('Cache-Control', 'private, no-store')->header('Vary', 'Authorization');
     }
 
     public function update(Request $request, Team $team): JsonResponse

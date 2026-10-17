@@ -1,42 +1,21 @@
 <?php
-
 namespace App\Http\Controllers\Dashboard;
-
 use App\Http\Controllers\Controller;
 use App\Models\Fixture\Fixture;
 use App\Models\Player\Player;
-use App\Models\PlayerStat\PlayerStat;
 use App\Models\Team\Team;
 use Illuminate\Http\JsonResponse;
-
-class DashboardController extends Controller
-{
-    public function index(): JsonResponse
-    {
-        $totalTeams = Team::count();
-        $totalPlayers = Player::count();
-        $totalFixtures = Fixture::count();
-        $completedFixtures = Fixture::where('status', 'completed')->count();
-        $scheduledFixtures = Fixture::where('status', 'scheduled')->count();
-        $totalGoals = PlayerStat::sum('goals');
-        $totalAssists = PlayerStat::sum('assists');
-        $averageRating = Player::where('overall_rating', '>', 0)->avg('overall_rating') ?? 0;
-
-        $recentFixtures = Fixture::with(['homeTeam', 'awayTeam'])
-            ->latest('match_date')
-            ->take(5)
-            ->get();
-
+class DashboardController extends Controller {
+    public function index(): JsonResponse {
         return response()->json([
-            'total_teams' => $totalTeams,
-            'total_players' => $totalPlayers,
-            'total_fixtures' => $totalFixtures,
-            'completed_fixtures' => $completedFixtures,
-            'scheduled_fixtures' => $scheduledFixtures,
-            'total_goals' => (int) $totalGoals,
-            'total_assists' => (int) $totalAssists,
-            'average_rating' => round($averageRating, 2),
-            'recent_fixtures' => $recentFixtures,
+            'total_teams' => Team::count(),
+            'total_players' => Player::count(),
+            'total_fixtures' => Fixture::count(),
+            'live_fixtures_count' => Fixture::where('status', 'live')->count(),
+            'live_fixtures' => Fixture::with(['homeTeam', 'awayTeam'])->where('status', 'live')->orderBy('match_date')->get(),
+            'completed_fixtures' => Fixture::where('status', 'completed')->count(),
+            'scheduled_fixtures' => Fixture::where('status', 'scheduled')->count(),
+            'recent_fixtures' => Fixture::with(['homeTeam', 'awayTeam'])->where('status', '!=', 'live')->latest('match_date')->take(5)->get(),
         ]);
     }
 }

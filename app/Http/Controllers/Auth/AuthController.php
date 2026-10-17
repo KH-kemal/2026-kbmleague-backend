@@ -10,13 +10,23 @@ class AuthController extends Controller {
         $data = $request->validate(['email' => 'required|email', 'password' => 'required|string']);
         $user = User::where('email', $data['email'])->first();
         if (!$user || !Hash::check($data['password'], $user->password)) return response()->json(['message' => 'Email atau kata sandi tidak valid.'], 401);
-        return response()->json(['user' => $user, 'token' => $user->createToken('auth-token')->plainTextToken]);
+        return $this->authenticatedResponse($user);
     }
     public function register(Request $request): JsonResponse {
         $data = $request->validate(['name' => 'required|string|max:255', 'email' => 'required|email|max:255|unique:users', 'password' => 'required|string|min:8|confirmed']);
         $user = User::create(['name' => $data['name'], 'email' => $data['email'], 'password' => $data['password'], 'is_admin' => false]);
-        return response()->json(['user' => $user, 'token' => $user->createToken('auth-token')->plainTextToken], 201);
+        return $this->authenticatedResponse($user, 201);
     }
+    private function authenticatedResponse(User $user, int $status = 200): JsonResponse {
+        $expiresAt = now()->addMinutes((int) config('sanctum.expiration'));
+        $token = $user->createToken('auth-token', ['*'], $expiresAt);
+        return response()->json([
+            'user' => $user,
+            'token' => $token->plainTextToken,
+            'expires_at' => $expiresAt->toIso8601String(),
+        ], $status)->header('Cache-Control', 'private, no-store');
+    }
+
     public function logout(Request $request): JsonResponse {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Berhasil keluar.']);

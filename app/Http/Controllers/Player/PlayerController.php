@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Player;
 
 use App\Http\Controllers\Controller;
 use App\Models\Player\Player;
+use App\Http\Resources\PlayerResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -12,28 +13,26 @@ class PlayerController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Player::with('team');
+        $isAdmin = (bool) $request->user('sanctum')?->is_admin;
 
         if ($request->has('search') && $request->search != '') {
-            $query->where(function ($q) use ($request) {
+            $query->where(function ($q) use ($request, $isAdmin) {
                 $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('position', 'like', '%' . $request->search . '%')
                   ->orWhereHas('team', function ($teamQuery) use ($request) {
                       $teamQuery->where('name', 'like', '%' . $request->search . '%');
                   });
+                if ($isAdmin) $q->orWhere('school_origin', 'like', '%' . $request->search . '%');
             });
-        }
-
-        if ($request->has('position') && $request->position != '') {
-            $query->where('position', $request->position);
         }
 
         if ($request->has('team_id') && $request->team_id != '') {
             $query->where('team_id', $request->team_id);
         }
 
-        $players = $query->orderBy('overall_rating', 'desc')->get();
+        $players = $query->orderBy('name')->get();
 
-        return response()->json($players);
+        return response()->json(PlayerResource::collection($players)->resolve($request))
+            ->header('Cache-Control', 'private, no-store')->header('Vary', 'Authorization');
     }
 
     public function store(Request $request): JsonResponse
@@ -42,12 +41,9 @@ class PlayerController extends Controller
             'team_id' => 'required|exists:teams,id',
             'name' => 'required|string|max:255',
             'photo' => 'nullable|string',
-            'position' => 'required|string',
+            'school_origin' => 'nullable|string|max:255',
+            'birth_place_date' => 'nullable|string|max:255',
             'jersey_number' => 'required|integer',
-            'birth_date' => 'nullable|date',
-            'height' => 'nullable|integer',
-            'weight' => 'nullable|integer',
-            'overall_rating' => 'nullable|numeric|between:0,10',
             'is_active' => 'boolean',
         ]);
 
@@ -59,9 +55,10 @@ class PlayerController extends Controller
         return response()->json($player->load('team'), 201);
     }
 
-    public function show(Player $player): JsonResponse
+    public function show(Request $request, Player $player): JsonResponse
     {
-        return response()->json($player->load('team'));
+        return response()->json((new PlayerResource($player->load('team')))->resolve($request))
+            ->header('Cache-Control', 'private, no-store')->header('Vary', 'Authorization');
     }
 
     public function update(Request $request, Player $player): JsonResponse
@@ -70,12 +67,9 @@ class PlayerController extends Controller
             'team_id' => 'sometimes|required|exists:teams,id',
             'name' => 'sometimes|required|string|max:255',
             'photo' => 'nullable|string',
-            'position' => 'sometimes|required|string',
+            'school_origin' => 'nullable|string|max:255',
+            'birth_place_date' => 'nullable|string|max:255',
             'jersey_number' => 'sometimes|required|integer',
-            'birth_date' => 'nullable|date',
-            'height' => 'nullable|integer',
-            'weight' => 'nullable|integer',
-            'overall_rating' => 'nullable|numeric|between:0,10',
             'is_active' => 'boolean',
             'qr_code' => 'nullable|string|unique:players,qr_code,' . $player->id,
         ]);
