@@ -17,6 +17,9 @@ return [
 
     'default' => env('CACHE_STORE', 'database'),
 
+    // Persist auth limits across requests even if the general cache is misconfigured as array.
+    'limiter' => env('CACHE_LIMITER_STORE', 'file'),
+
     /*
     |--------------------------------------------------------------------------
     | Cache Stores

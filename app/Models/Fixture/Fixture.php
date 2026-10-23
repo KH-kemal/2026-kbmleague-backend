@@ -12,6 +12,7 @@ class Fixture extends Model
 
     protected $casts = [
         'goals' => 'array',
+        'goalkeeper_saves' => 'array',
         'match_statistics' => 'array',
     ];
 

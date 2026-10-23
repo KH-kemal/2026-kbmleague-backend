@@ -11,12 +11,12 @@ class UploadController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
-        $maxKilobytes = $request->input('type') === 'players' ? 3072 : 2048;
+        $maxKilobytes = in_array($request->input('type'), ['players', 'news'], true) ? 3072 : 2048;
         $maxMegabytes = $maxKilobytes / 1024;
 
         $request->validate([
             'file' => 'required|image|mimes:jpeg,png,jpg,webp|max:' . $maxKilobytes,
-            'type' => 'required|in:teams,players',
+            'type' => 'required|in:teams,players,news',
         ], [
             'file.required' => 'Pilih foto yang akan diunggah.',
             'file.image' => 'File harus berupa gambar JPG, PNG, atau WebP.',
@@ -25,7 +25,7 @@ class UploadController extends Controller
             'file.uploaded' => 'Foto gagal diterima server. Periksa ukuran file dan coba lagi.',
         ]);
 
-        $folder = $request->type === 'teams' ? 'logos' : 'players';
+        $folder = match ($request->type) { 'teams' => 'logos', 'news' => 'news', default => 'players' };
         $path = $request->file('file')->store($folder, 'public');
         if (!$path) {
             return response()->json(['message' => 'Foto gagal disimpan di server. Silakan coba lagi.'], 503);

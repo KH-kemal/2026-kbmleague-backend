@@ -80,11 +80,17 @@ class FixtureController extends Controller
     {
         $rules = [
             'goals' => 'sometimes|nullable|array|max:100',
-            'goals.*' => 'required|array:team_id,player_id,minute,added_time',
+            'goals.*' => 'required|array:team_id,player_id,minute,added_time,type',
+            'goals.*.type' => 'sometimes|in:regular,penalty,own_goal',
             'goals.*.team_id' => 'required|integer',
             'goals.*.player_id' => 'required|integer',
             'goals.*.minute' => 'required|integer|min:0|max:150',
             'goals.*.added_time' => 'nullable|integer|min:0|max:30',
+            'goalkeeper_saves' => 'sometimes|nullable|array|max:50',
+            'goalkeeper_saves.*' => 'required|array:team_id,player_id,saves',
+            'goalkeeper_saves.*.team_id' => 'required|integer',
+            'goalkeeper_saves.*.player_id' => 'required|integer|distinct',
+            'goalkeeper_saves.*.saves' => 'required|integer|min:0|max:999',
             'match_statistics' => 'sometimes|nullable|array:home,away',
         ];
         $fields = 'possession,shots,shots_on_target,saves,fouls,yellow_cards,red_cards';
@@ -113,14 +119,17 @@ class FixtureController extends Controller
         foreach ($goals as $index => &$goal) {
             $teamId = (int) $goal['team_id'];
             $player = $players->get($goal['player_id']);
+            $type = $goal['type'] ?? 'regular';
+            $playerTeam = $type === 'own_goal' ? ($teamId === $home ? $away : $home) : $teamId;
             $unchanged = $fixture && collect($fixture->goals ?? [])->contains(fn ($saved) =>
-                (int) $saved['player_id'] === (int) $goal['player_id'] && (int) $saved['team_id'] === $teamId);
+                (int) $saved['player_id'] === (int) $goal['player_id'] && (int) $saved['team_id'] === $teamId && ($saved['type'] ?? 'regular') === $type);
             if (!in_array($teamId, [$home, $away], true) ||
-                (!$unchanged && (!$player || (int) $player->team_id !== $teamId))) {
-                throw ValidationException::withMessages(["goals.$index.player_id" => 'Pencetak gol harus berasal dari tim pada pertandingan ini.']);
+                (!$unchanged && (!$player || (int) $player->team_id !== $playerTeam))) {
+                throw ValidationException::withMessages(["goals.$index.player_id" => 'Pemain harus berasal dari tim pencetak gol; untuk gol bunuh diri pilih pemain dari tim lawan.']);
             }
             $goal = [
                 'team_id' => $teamId,
+                'type' => $type,
                 'player_id' => (int) $goal['player_id'],
                 'player_name' => $unchanged
                     ? collect($fixture->goals)->first(fn ($saved) => (int) $saved['player_id'] === (int) $goal['player_id'] && (int) $saved['team_id'] === $teamId)['player_name']
@@ -137,6 +146,35 @@ class FixtureController extends Controller
             }
         }
         if (array_key_exists('goals', $data)) $data['goals'] = $goals;
+        return $this->prepareGoalkeeperSaves($data, $fixture, $home, $away);
+    }
+
+    private function prepareGoalkeeperSaves(array $data, ?Fixture $fixture, int $home, int $away): array
+    {
+        $records = array_key_exists('goalkeeper_saves', $data) ? ($data['goalkeeper_saves'] ?? []) : ($fixture?->goalkeeper_saves ?? []);
+        $players = Player::whereIn('id', array_column($records, 'player_id'))->get()->keyBy('id');
+        $totals = [$home => 0, $away => 0];
+        foreach ($records as $index => &$record) {
+            $teamId = (int) $record['team_id'];
+            $player = $players->get($record['player_id']);
+            $saved = collect($fixture?->goalkeeper_saves ?? [])->first(fn ($entry) =>
+                (int) $entry['player_id'] === (int) $record['player_id'] && (int) $entry['team_id'] === $teamId);
+            if (!in_array($teamId, [$home, $away], true) || (!$saved && (!$player || (int) $player->team_id !== $teamId))) {
+                throw ValidationException::withMessages(["goalkeeper_saves.$index.player_id" => 'Kiper harus berasal dari salah satu tim pada pertandingan ini.']);
+            }
+            $record = ['team_id' => $teamId, 'player_id' => (int) $record['player_id'],
+                'player_name' => $saved['player_name'] ?? $player->name, 'saves' => (int) $record['saves']];
+            $totals[$teamId] += $record['saves'];
+        }
+        unset($record);
+        $statistics = array_key_exists('match_statistics', $data) ? $data['match_statistics'] : $fixture?->match_statistics;
+        foreach (['home' => $home, 'away' => $away] as $side => $teamId) {
+            $total = $statistics[$side]['saves'] ?? null;
+            if ($total !== null && $totals[$teamId] > $total) {
+                throw ValidationException::withMessages(['goalkeeper_saves' => 'Total saves per kiper tidak boleh melebihi saves tim. Sesuaikan statistik saves tim atau rincian kipernya.']);
+            }
+        }
+        if (array_key_exists('goalkeeper_saves', $data)) $data['goalkeeper_saves'] = $records;
         return $data;
     }
 

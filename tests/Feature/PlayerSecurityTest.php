@@ -108,8 +108,9 @@ class PlayerSecurityTest extends TestCase
 
     public function test_registration_token_has_expiry_and_cannot_claim_admin_role(): void
     {
+        config(['security.public_registration' => true]);
         $response = $this->postJson('/api/register', ['name' => 'Member', 'email' => 'new@example.test', 'password' => 'a-long-test-password',
-            'password_confirmation' => 'a-long-test-password', 'is_admin' => true])->assertCreated()->assertJsonPath('user.is_admin', false);
+            'password_confirmation' => 'a-long-test-password'])->assertCreated()->assertJsonPath('user.is_admin', false);
         $this->assertNotNull(PersonalAccessToken::findToken($response->json('token'))->expires_at);
     }
 
